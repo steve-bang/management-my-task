@@ -1,13 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useAppStore } from '@/app/store/useAppStore';
+import { ToastFn, useAppStore } from '@/app/store/useAppStore';
 import { useTimer } from '@/app/hooks/useTimer';
 import { Play, Pause, Square, Clock, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatTimerDisplay, getTodayFocusSeconds, formatFocusDuration } from '@/app/lib/utils';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { FocusMode } from '@/app/lib/types';
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+
+
 
 const MODES: { value: FocusMode; label: string; desc: string }[] = [
   { value: 25, label: '25 min', desc: 'Pomodoro' },
@@ -23,6 +27,14 @@ export default function FocusView() {
     startTimer, pauseTimer, endTimer,
     setMode, setCustomMinutes, sessions,
   } = useAppStore();
+
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+
+  const toast: ToastFn = {
+    show: addToast,
+    update: updateToast,
+    remove: removeToast,
+  };
 
   const [showHistory, setShowHistory] = useState(false);
 
@@ -68,11 +80,10 @@ export default function FocusView() {
               key={String(value)}
               onClick={() => { if (!isRunning && !isPaused) setMode(value); }}
               disabled={isRunning || isPaused}
-              className={`flex flex-col items-center py-3 px-2 rounded-xl border text-center transition-all ${
-                active
+              className={`flex flex-col items-center py-3 px-2 rounded-xl border text-center transition-all ${active
                   ? 'border-[#E85D00] bg-[#FFF0E8] text-[#E85D00]'
                   : 'border-[#E8E5DF] bg-white text-[#6B6760] hover:border-[#9E9A94]'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-sm font-bold">{label}</span>
               <span className="text-[10px] mt-0.5 opacity-70">{desc}</span>
@@ -125,9 +136,8 @@ export default function FocusView() {
           {/* Time display */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className={`text-4xl font-bold tracking-tight font-mono ${
-                isRunning ? 'text-[#E85D00] animate-timer-pulse' : 'text-[#1A1917]'
-              }`}
+              className={`text-4xl font-bold tracking-tight font-mono ${isRunning ? 'text-[#E85D00] animate-timer-pulse' : 'text-[#1A1917]'
+                }`}
             >
               {formatTimerDisplay(timerSeconds)}
             </span>
@@ -141,7 +151,7 @@ export default function FocusView() {
         <div className="flex items-center gap-3 mt-6">
           {isIdle && (
             <button
-              onClick={startTimer}
+              onClick={() => startTimer(toast)}
               className="flex items-center gap-2 bg-[#E85D00] text-white px-8 py-3 rounded-2xl font-semibold text-sm hover:bg-[#CC5000] transition-all active:scale-95 shadow-[0_4px_12px_rgba(232,93,0,0.3)]"
             >
               <Play size={16} fill="white" />
@@ -152,14 +162,14 @@ export default function FocusView() {
           {isRunning && (
             <>
               <button
-                onClick={pauseTimer}
+                onClick={() => pauseTimer()}
                 className="flex items-center gap-2 bg-[#FDF6E3] text-[#B07D12] border border-[#B07D12] px-6 py-3 rounded-2xl font-semibold text-sm hover:bg-[#FAF0D0] transition-all active:scale-95"
               >
                 <Pause size={16} />
                 Dừng
               </button>
               <button
-                onClick={endTimer}
+                onClick={() => endTimer(toast)}
                 className="flex items-center gap-2 bg-white text-[#9E9A94] border border-[#E8E5DF] px-6 py-3 rounded-2xl font-semibold text-sm hover:bg-[#F7F6F2] transition-all active:scale-95"
               >
                 <Square size={16} />
@@ -171,14 +181,14 @@ export default function FocusView() {
           {isPaused && (
             <>
               <button
-                onClick={startTimer}
+                onClick={() => startTimer(toast)}
                 className="flex items-center gap-2 bg-[#E85D00] text-white px-6 py-3 rounded-2xl font-semibold text-sm hover:bg-[#CC5000] transition-all active:scale-95"
               >
                 <Play size={16} fill="white" />
                 Tiếp tục
               </button>
               <button
-                onClick={endTimer}
+                onClick={() => endTimer(toast)}
                 className="flex items-center gap-2 bg-white text-[#9E9A94] border border-[#E8E5DF] px-6 py-3 rounded-2xl font-semibold text-sm hover:bg-[#F7F6F2] transition-all active:scale-95"
               >
                 <Square size={16} />
@@ -239,11 +249,10 @@ export default function FocusView() {
                       </p>
                     </div>
                     <span
-                      className={`text-[10px] font-semibold px-2 py-1 rounded-lg ${
-                        session.completed
+                      className={`text-[10px] font-semibold px-2 py-1 rounded-lg ${session.completed
                           ? 'bg-[#E8F7ED] text-[#2D8A4E]'
                           : 'bg-[#F7F6F2] text-[#9E9A94]'
-                      }`}
+                        }`}
                     >
                       {session.completed ? '✓ Xong' : 'Dừng sớm'}
                     </span>
@@ -254,6 +263,9 @@ export default function FocusView() {
           )}
         </div>
       )}
+
+      <Toast toasts={toasts} onRemove={removeToast} />
+
     </div>
   );
 }

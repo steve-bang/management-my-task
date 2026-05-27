@@ -5,6 +5,10 @@ import { useAppStore } from '@/app/store/useAppStore';
 import { Priority } from '@/app/lib/types';
 import { Plus, ChevronDown } from 'lucide-react';
 
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+import { ToastFn } from '@/app/store/useAppStore';
+
 const PRIORITIES: { value: Priority; label: string; color: string }[] = [
   { value: 'high', label: 'Cao', color: '#E85D00' },
   { value: 'medium', label: 'Trung bình', color: '#B07D12' },
@@ -22,10 +26,13 @@ export default function QuickAddTask({ placeholder = 'Thêm task nhanh...', comp
   const [priority, setPriority] = useState<Priority>('medium');
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleSubmit = () => {
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+  const toast: ToastFn = { show: addToast, update: updateToast, remove: removeToast };
+
+  const handleSubmit = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
-    addTask(trimmed, priority);
+    await addTask(trimmed, priority, undefined, toast);
     setTitle('');
     setShowOptions(false);
   };
@@ -43,9 +50,8 @@ export default function QuickAddTask({ placeholder = 'Thêm task nhanh...', comp
   return (
     <div className="relative">
       <div
-        className={`flex items-center gap-2 bg-white border border-[#E8E5DF] rounded-xl transition-all ${
-          showOptions || title ? 'border-[#E85D00] shadow-[0_0_0_3px_rgba(232,93,0,0.08)]' : 'hover:border-[#9E9A94]'
-        } ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}
+        className={`flex items-center gap-2 bg-white border border-[#E8E5DF] rounded-xl transition-all ${showOptions || title ? 'border-[#E85D00] shadow-[0_0_0_3px_rgba(232,93,0,0.08)]' : 'hover:border-[#9E9A94]'
+          } ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}
       >
         <Plus size={16} color="#9E9A94" strokeWidth={2.5} className="flex-shrink-0" />
         <input
@@ -88,6 +94,8 @@ export default function QuickAddTask({ placeholder = 'Thêm task nhanh...', comp
           </div>
         )}
       </div>
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

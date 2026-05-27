@@ -7,7 +7,10 @@ import TaskItem from './TaskItem';
 import QuickAddTask from '../ui/QuickAddTask';
 import { ListTodo, CheckCheck, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { generateId } from '@/app/lib/utils';
+
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+import { ToastFn } from '@/app/store/useAppStore';
 
 export default function TasksView() {
   const { tasks, addTask } = useAppStore();
@@ -16,6 +19,9 @@ export default function TasksView() {
   const [newTitle, setNewTitle] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('medium');
   const [newDueDate, setNewDueDate] = useState('');
+
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+  const toast: ToastFn = { show: addToast, update: updateToast, remove: removeToast };
 
   const todoTasks = useMemo(() => {
     const order = { high: 0, medium: 1, low: 2 };
@@ -32,10 +38,10 @@ export default function TasksView() {
     tasks.filter((t) => t.status === 'done').sort((a, b) =>
       (b.completedAt ?? '').localeCompare(a.completedAt ?? '')), [tasks]);
 
-  const handleFullAdd = () => {
+  const handleFullAdd = async () => {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
-    addTask(trimmed, newPriority, newDueDate || undefined);
+    await addTask(newTitle.trim(), newPriority, newDueDate || undefined, toast);
     setNewTitle('');
     setNewPriority('medium');
     setNewDueDate('');
@@ -172,6 +178,8 @@ export default function TasksView() {
           )}
         </div>
       )}
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

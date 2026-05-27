@@ -10,8 +10,15 @@ import { vi } from 'date-fns/locale';
 import TaskItem from '../tasks/TaskItem';
 import QuickAddTask from '../ui/QuickAddTask';
 
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+import { ToastFn } from '@/app/store/useAppStore';
+
 export default function Dashboard() {
   const { tasks, sessions, setView, setMainFocus } = useAppStore();
+
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+  const toast: ToastFn = { show: addToast, update: updateToast, remove: removeToast };
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -173,6 +180,8 @@ export default function Dashboard() {
           <p className="text-xs text-[#2D8A4E] mt-0.5 opacity-80">Bạn đã hoàn thành {doneTasks.length} task hôm nay.</p>
         </div>
       )}
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

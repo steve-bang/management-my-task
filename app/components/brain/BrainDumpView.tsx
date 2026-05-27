@@ -3,14 +3,21 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '@/app/store/useAppStore';
 import { BrainDump } from '@/app/lib/types';
-import { Send, Archive, Trash2, ArrowRight, ArchiveRestore, Brain, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Archive, Trash2, ArrowRight, Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+import { ToastFn } from '@/app/store/useAppStore';
 
 export default function BrainDumpView() {
   const { dumps, addDump, convertDumpToTask, archiveDump, deleteDump } = useAppStore();
   const [input, setInput] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+  const toast: ToastFn = { show: addToast, update: updateToast, remove: removeToast };
 
   const activeDumps = useMemo(() =>
     dumps.filter((d) => !d.archived).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
@@ -20,10 +27,10 @@ export default function BrainDumpView() {
     dumps.filter((d) => d.archived).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [dumps]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-    addDump(trimmed);
+    await addDump(trimmed, toast);
     setInput('');
   };
 
@@ -85,9 +92,9 @@ export default function BrainDumpView() {
               <DumpCard
                 key={dump.id}
                 dump={dump}
-                onConvert={() => convertDumpToTask(dump.id)}
-                onArchive={() => archiveDump(dump.id)}
-                onDelete={() => deleteDump(dump.id)}
+                onConvert={() => convertDumpToTask(dump.id, toast)}
+                onArchive={() => archiveDump(dump.id, toast)}
+                onDelete={() => deleteDump(dump.id, toast)}
               />
             ))}
           </div>
@@ -120,6 +127,8 @@ export default function BrainDumpView() {
           )}
         </div>
       )}
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
@@ -137,9 +146,8 @@ function DumpCard({ dump, archived = false, onConvert, onArchive, onDelete }: Du
 
   return (
     <div
-      className={`group bg-white border rounded-xl p-3.5 transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${
-        archived ? 'border-[#E8E5DF] opacity-60' : 'border-[#E8E5DF]'
-      } ${dump.convertedToTaskId ? 'border-l-2 border-l-[#2D8A4E]' : ''}`}
+      className={`group bg-white border rounded-xl p-3.5 transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${archived ? 'border-[#E8E5DF] opacity-60' : 'border-[#E8E5DF]'
+        } ${dump.convertedToTaskId ? 'border-l-2 border-l-[#2D8A4E]' : ''}`}
     >
       <p className={`text-sm text-[#1A1917] leading-relaxed whitespace-pre-wrap ${archived ? 'line-through opacity-70' : ''}`}>
         {dump.content}

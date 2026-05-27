@@ -6,6 +6,10 @@ import { useAppStore } from '@/app/store/useAppStore';
 import { Check, Star, Trash2, Pencil, X, Calendar } from 'lucide-react';
 import { formatDueDate, isOverdue, isDueSoon } from '@/app/lib/utils';
 
+import { useToast } from '@/app/hooks/useToast';
+import Toast from '@/app/components/ui/Toast';
+import { ToastFn } from '@/app/store/useAppStore';
+
 const PRIORITY_CONFIG = {
   high: { color: '#E85D00', bg: '#FFF0E8', label: 'Cao' },
   medium: { color: '#B07D12', bg: '#FDF6E3', label: 'TB' },
@@ -22,6 +26,9 @@ export default function TaskItem({ task, showFocusStar = false }: TaskItemProps)
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPriority, setEditPriority] = useState<Priority>(task.priority);
+
+  const { toasts, addToast, removeToast, updateToast } = useToast();
+  const toast: ToastFn = { show: addToast, update: updateToast, remove: removeToast };
 
   const isDone = task.status === 'done';
   const pc = PRIORITY_CONFIG[task.priority];
@@ -92,20 +99,18 @@ export default function TaskItem({ task, showFocusStar = false }: TaskItemProps)
 
   return (
     <div
-      className={`group flex items-start gap-3 bg-white border rounded-xl p-3 transition-all duration-150 hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)] ${
-        task.isMainFocus && !isDone
+      className={`group flex items-start gap-3 bg-white border rounded-xl p-3 transition-all duration-150 hover:shadow-[0_2px_8px_rgba(0,0,0,0.07)] ${task.isMainFocus && !isDone
           ? 'border-[#E85D00] bg-[#FFFDF9]'
           : 'border-[#E8E5DF]'
-      } ${isDone ? 'opacity-60' : ''}`}
+        } ${isDone ? 'opacity-60' : ''}`}
     >
       {/* Checkbox */}
       <button
-        onClick={() => completeTask(task.id)}
-        className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${
-          isDone
+        onClick={() => completeTask(task.id, toast)}
+        className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${isDone
             ? 'bg-[#2D8A4E] border-[#2D8A4E]'
             : 'border-[#D0CCC5] hover:border-[#E85D00]'
-        }`}
+          }`}
       >
         {isDone && <Check size={11} color="white" strokeWidth={3} className="animate-check-in" />}
       </button>
@@ -128,13 +133,12 @@ export default function TaskItem({ task, showFocusStar = false }: TaskItemProps)
           {/* Due date */}
           {task.dueDate && (
             <span
-              className={`flex items-center gap-1 text-[10px] font-medium ${
-                isOverdue(task.dueDate)
+              className={`flex items-center gap-1 text-[10px] font-medium ${isOverdue(task.dueDate)
                   ? 'text-[#C0392B]'
                   : isDueSoon(task.dueDate)
-                  ? 'text-[#B07D12]'
-                  : 'text-[#9E9A94]'
-              }`}
+                    ? 'text-[#B07D12]'
+                    : 'text-[#9E9A94]'
+                }`}
             >
               <Calendar size={10} />
               {formatDueDate(task.dueDate)}
@@ -153,9 +157,8 @@ export default function TaskItem({ task, showFocusStar = false }: TaskItemProps)
         {showFocusStar && !isDone && (
           <button
             onClick={() => setMainFocus(task.id)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              task.isMainFocus ? 'text-[#E85D00]' : 'text-[#D0CCC5] hover:text-[#E85D00]'
-            }`}
+            className={`p-1.5 rounded-lg transition-colors ${task.isMainFocus ? 'text-[#E85D00]' : 'text-[#D0CCC5] hover:text-[#E85D00]'
+              }`}
             title="Đặt làm Main Focus"
           >
             <Star size={14} fill={task.isMainFocus ? '#E85D00' : 'none'} strokeWidth={2} />
@@ -169,13 +172,15 @@ export default function TaskItem({ task, showFocusStar = false }: TaskItemProps)
           <Pencil size={13} />
         </button>
         <button
-          onClick={() => deleteTask(task.id)}
+          onClick={() => deleteTask(task.id, toast)}
           className="p-1.5 rounded-lg text-[#9E9A94] hover:text-[#C0392B] hover:bg-[#FDECEA] transition-colors"
           title="Xóa"
         >
           <Trash2 size={13} />
         </button>
       </div>
+
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
