@@ -6,8 +6,10 @@ import Dashboard from './dashboard/Dashboard';
 import TasksView from './tasks/TasksView';
 import FocusView from './focus/FocusView';
 import BrainDumpView from './brain/BrainDumpView';
+import { useFirestoreSync } from '../store/useFirestoreSync';
 
 export default function AppShell() {
+  useFirestoreSync(); // load data on mount
   const { view } = useAppStore();
 
   const renderView = () => {
